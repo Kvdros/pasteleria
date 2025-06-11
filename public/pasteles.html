@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="imagen.png">
+    <title>Pasteles</title>
+    <link rel="stylesheet" href="pasteles.css">
+</head>
+<body>
+    
+    <!-- Menu de navegacion -->
+     <div class="menu">
+        <a href="principal.html">Menu principal</a>
+        <a href="empleados.html">Empleados</a>
+        <a href="pedidos.html">Pedidos</a>
+        <a href="index.html">Cerrar sesión</a>
+     </div>
+     <h2>Vista de pasteles</h2>
+     
+     <div class="agregar-pastel-container">
+        <h3>Agregar pastel</h3>
+        <form id="formPastel" class="form-horizontal">
+            <input type="text" id="nombre" placeholder="Nombre" required>
+            <input type="number" id="precio" placeholder="Precio" required min="0">
+            <button type="submit">Agregar</button>
+        </form>
+     </div>
+<!-- tabla de pasteles agregados -->
+     <div class="tabla-container">
+        <table id="tablaPasteles">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Precio</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Aqui se agregan las filas de los pasateles -->
+            </tbody>
+        </table>
+     </div>
+
+     <script>
+        // funcion para cargar y mostrar pasteles
+        async function cargarPasteles(){
+            const res = await fetch('/api/pasteles');
+            const pasteles = await res.json();
+            const tbody = document.querySelector('#tablaPasteles tbody');
+            tbody.innerHTML = pasteles.map(p =>  `
+            <tr>
+                <td>${p.nombre}</td>
+                <td>${p.precio}</td>
+                <td>
+                    <button class="btn-eliminar" 
+                    onclick = "eliminarPastel('${p._id}')">Eliminar</button>
+                </td>
+            </tr>
+            `).join('');
+        }
+
+        //funcion para eliminar pastel preguntando al usuario
+        async function eliminarPastel(id){
+            const confirmar = confirm("¿Estas seguro de eliminar?");
+            if(!confirmar)return;
+            await fetch(`/api/pasteles/${id}`, {method:'DELETE'});
+            cargarPasteles();
+        }
+
+        //Manejar el evento submit
+        document.getElementById('formPastel').addEventListener('submit' ,async (e) =>  {
+            e.preventDefault();
+            const nombre =document.getElementById('nombre').value;
+            const precio =document.getElementById('precio').value;
+            await fetch ('/api/pasteles',{
+                method:'POST',
+                headers:{'Content-Type':'application/json'},
+                body:JSON.stringify({nombre,precio})
+            });
+            document.getElementById('formPastel').reset;
+            cargarPasteles();
+        });
+        cargarPasteles();
+        window.eliminarPastel = eliminarPastel;
+     </script>
+
+</body>
+</html>

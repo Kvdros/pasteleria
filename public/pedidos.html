@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pedidos</title>
+    <link rel="stylesheet" href="pedidos.css">
+</head>
+<body>
+    <!-- Menú de navegación -->
+    <div class="menu">
+        <a href="principal.html">Menú principal</a>
+        <a href="empleados.html">Empleados</a>
+        <a href="pasteles.html">Pasteles</a>
+        <a href="index.html">Cerrar sesión</a>
+    </div>
+
+    <h2>Vista de Pedidos</h2>
+
+    <!-- Formulario para agregar pedido -->
+    <div class="agregar-pedido-container">
+        <h3>Agregar Pedido</h3>
+        <form id="formPedido" class="form-horizontal">
+            <input type="text" id="nombre" placeholder="Nombre del cliente" required>
+            <input type="text" id="producto" placeholder="Producto" required>
+            <button type="submit">Agregar Pedido</button>
+        </form>
+    </div>
+
+    <!-- Tabla de pedidos -->
+    <div class="tabla-container">
+        <table id="tablaPedidos">
+            <thead>
+                <tr>
+                    <th>Cliente</th>
+                    <th>Producto</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Aquí se agregan las filas de los pedidos -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Script para gestionar pedidos -->
+    <script>
+        async function cargarPedidos() {
+            const res = await fetch('/api/pedidos');
+            const pedidos = await res.json();
+            const tbody = document.querySelector('#tablaPedidos tbody');
+
+            tbody.innerHTML = pedidos.map(p => `
+                <tr>
+                    <td>${p.nombre}</td>
+                    <td>${p.producto}</td>
+                    <td>
+                        <button class="btn-eliminar" onclick="eliminarPedido('${p._id}')">Eliminar</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function eliminarPedido(id) {
+            if (!confirm('¿Estás seguro de eliminar este pedido?')) return;
+            await fetch(`/api/pedidos/${id}`, { method: 'DELETE' });
+            cargarPedidos();
+        }
+
+        document.getElementById('formPedido').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const nombre = document.getElementById('nombre').value.trim();
+            const producto = document.getElementById('producto').value.trim();
+
+            if (!nombre || !producto) {
+                alert('Por favor complete todos los campos');
+                return;
+            }
+
+            await fetch('/api/pedidos', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nombre, producto })
+            });
+
+            document.getElementById('formPedido').reset();
+            cargarPedidos();
+        });
+
+        window.eliminarPedido = eliminarPedido;
+        cargarPedidos();
+    </script>
+</body>
+</html>

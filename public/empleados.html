@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Empleados</title>
+    <link rel="stylesheet" href="empleados.css">
+</head>
+<body>
+    <!-- Menú de navegación -->
+    <div class="menu">
+        <a href="principal.html">Menú principal</a>
+        <a href="pasteles.html">Pasteles</a>
+        <a href="pedidos.html">Pedidos</a>
+        <a href="index.html">Cerrar sesión</a>
+    </div>
+
+    <h2>Vista de Empleados</h2>
+
+    <div class="agregar-empleado-container">
+        <h3>Agregar Empleado</h3>
+        <form id="formEmpleado" class="form-horizontal">
+            <input type="text" id="nombre" placeholder="Nombre" required>
+            <input type="text" id="rol" placeholder="Rol" required>
+            <button type="submit">Agregar</button>
+        </form>
+    </div>
+
+    <div class="tabla-container">
+        <table id="tablaEmpleados">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Rol</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Aquí se agregarán las filas de los empleados -->
+                 
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        async function cargarEmpleados() {
+            const res = await fetch('/api/empleados');
+            const empleados = await res.json();
+            const tbody = document.querySelector('#tablaEmpleados tbody');
+
+            tbody.innerHTML = empleados.map(e => `
+                <tr>
+                    <td>${e.nombre}</td>
+                    <td>${e.rol}</td>
+                    <td>
+                        <button class="btn-eliminar" onclick="eliminarEmpleado('${e._id}')">Eliminar</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function eliminarEmpleado(id) {
+            if (!confirm('¿Estás seguro de eliminar este empleado?')) return;
+            await fetch(`/api/empleados/${id}`, { method: 'DELETE' });
+            cargarEmpleados();
+        }
+
+        document.getElementById('formEmpleado').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const nombre = document.getElementById('nombre').value.trim();
+            const rol = document.getElementById('rol').value.trim();
+
+            if (!nombre || !rol) {
+                alert('Por favor complete todos los campos');
+                return;
+            }
+
+            await fetch('/api/empleados', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nombre, rol })
+            });
+
+            document.getElementById('formEmpleado').reset();
+            cargarEmpleados();
+        });
+
+        window.eliminarEmpleado = eliminarEmpleado;
+        cargarEmpleados();
+    </script>
+</body>
+</html>
