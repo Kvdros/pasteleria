@@ -7,7 +7,7 @@ const bcrypt = require('bcrypt');
 
 // crear una instancia de la aplicación express
 const app = express();
-const PORT = 3000;
+const PORT =process.env.PORT||3000;//usa elpuerto 
 
 // habilitar CORS para permitir peticiones
 app.use(cors());
