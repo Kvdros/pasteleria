@@ -1,36 +1,38 @@
-// importar los frameworks necesarios para ejecutar la app
+// IMPORTA EL FRAMEWORK EXPRESS PARA CREAR EL SERVIDOR WEB
 const express = require('express');
+// IMPORTA MONGOOSE PARA INTERACTUAR CON MONGODB
 const mongoose = require('mongoose');
-const bodyParser = require('body-parser');
-const cors = require('cors');
+// IMPORTA BCRYPT PARA ENCRIPTAR CONTRASEÑAS
 const bcrypt = require('bcrypt');
+// IMPORTA CORS PARA PERMITIR SOLICITUDES DE DIFERENTES DOMINIOS
+const cors = require('cors');
+// IMPORTA BODY-PARSER PARA PROCESAR DATOS JSON EN LAS SOLICITUDES
+const bodyParser = require('body-parser');
 
-// crear una instancia de la aplicación express
+// CREA UNA INSTANCIA DE LA APLICACIÓN EXPRESS
 const app = express();
-const PORT =process.env.PORT||3000;//usa elpuerto 
 
-// habilitar CORS para permitir peticiones
-app.use(cors());
+// CAMBIO IMPORTANTE PARA RAILWAY: USA process.env.PORT
+const PORT = process.env.PORT || 3000; // USA EL PUERTO QUE ASIGNE RAILWAY O LOCAL 3000
 
-// permite a express entender el formato JSON
-app.use(bodyParser.json());
+// MIDDLEWARE
+app.use(cors()); // HABILITA CORS
+app.use(bodyParser.json()); // PERMITE PARSEAR JSON
+app.use(express.static('public')); // SIRVE ARCHIVOS ESTÁTICOS DESDE "public"
 
-// detectar archivos estáticos en la carpeta public
-app.use(express.static('public'));
-
-// conectar a la base de datos de MongoDB
-mongoose.connect('mongodb://localhost:27017/pasteleria', {
+// CONEXIÓN A MONGODB ATLAS USANDO VARIABLE DE ENTORNO
+mongoose.connect(process.env.MONGODB_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true
 })
-.then(() => console.log('Conectado a MongoDB'))
-.catch(err => console.error(err));
+.then(() => console.log('CONECTADO A MONGODB ATLAS'))
+.catch(err => console.error('ERROR DE CONEXIÓN:', err));
 
-// Esquemas y modelos
+// ESQUEMAS Y MODELOS
 const UsuarioSchema = new mongoose.Schema({
     nombre: String,
     email: String,
-    password: String,
+    password: String
 });
 const Usuario = mongoose.model('Usuario', UsuarioSchema);
 
@@ -52,38 +54,27 @@ const PedidoSchema = new mongoose.Schema({
 });
 const Pedido = mongoose.model('Pedido', PedidoSchema);
 
-// Ruta de registro
+// RUTAS DE AUTENTICACIÓN
+
 app.post('/registro', async (req, res) => {
     const { nombre, email, password } = req.body;
-
-    try {
-        const hashedPassword = await bcrypt.hash(password, 10);
-        const nuevoUsuario = new Usuario({ nombre, email, password: hashedPassword });
-        await nuevoUsuario.save();
-        res.status(201).send('Usuario registrado');
-    } catch (err) {
-        res.status(500).send('Error al registrar usuario');
-    }
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const nuevoUsuario = new Usuario({ nombre, email, password: hashedPassword });
+    await nuevoUsuario.save();
+    res.status(201).send('Usuario registrado');
 });
 
-// Ruta de login
 app.post('/login', async (req, res) => {
     const { email, password } = req.body;
-
-    try {
-        const usuario = await Usuario.findOne({ email });
-        if (!usuario) return res.status(401).send('Usuario no encontrado');
-
-        const valid = await bcrypt.compare(password, usuario.password);
-        if (!valid) return res.status(401).send('Contraseña incorrecta');
-
-        res.send('Bienvenido ' + usuario.nombre);
-    } catch (err) {
-        res.status(500).send('Error en el inicio de sesión');
-    }
+    const usuario = await Usuario.findOne({ email });
+    if (!usuario) return res.status(401).send('Usuario no encontrado');
+    const valid = await bcrypt.compare(password, usuario.password);
+    if (!valid) return res.status(401).send('Contraseña incorrecta');
+    res.send('Inicio de sesión exitoso');
 });
 
-// CRUD Pasteles
+// CRUD PASTELES
+
 app.get('/api/pasteles', async (req, res) => {
     const pasteles = await Pastel.find();
     res.json(pasteles);
@@ -100,7 +91,8 @@ app.delete('/api/pasteles/:id', async (req, res) => {
     res.send('Pastel eliminado');
 });
 
-// CRUD Empleados
+// CRUD EMPLEADOS
+
 app.get('/api/empleados', async (req, res) => {
     const empleados = await Empleado.find();
     res.json(empleados);
@@ -109,7 +101,7 @@ app.get('/api/empleados', async (req, res) => {
 app.post('/api/empleados', async (req, res) => {
     const nuevo = new Empleado(req.body);
     await nuevo.save();
-    res.status(201).send('Empleado creado');
+    res.status(201).send('Empleado agregado');
 });
 
 app.delete('/api/empleados/:id', async (req, res) => {
@@ -117,15 +109,17 @@ app.delete('/api/empleados/:id', async (req, res) => {
     res.send('Empleado eliminado');
 });
 
-// CRUD Pedidos
+// CRUD PEDIDOS
+
 app.get('/api/pedidos', async (req, res) => {
     const pedidos = await Pedido.find();
     res.json(pedidos);
 });
+
 app.post('/api/pedidos', async (req, res) => {
     const nuevo = new Pedido(req.body);
     await nuevo.save();
-    res.status(201).send('Pedido creado');
+    res.status(201).send('Pedido registrado');
 });
 
 app.delete('/api/pedidos/:id', async (req, res) => {
@@ -133,8 +127,7 @@ app.delete('/api/pedidos/:id', async (req, res) => {
     res.send('Pedido eliminado');
 });
 
-// Iniciar el servidor
+// INICIAR SERVIDOR CON PUERTO DINÁMICO PARA PRODUCCIÓN
 app.listen(PORT, () => {
-    console.log(`Servidor escuchando en http://localhost:${PORT}`);
-
+    console.log(` Servidor escuchando en http://localhost:${PORT}`);
 });
